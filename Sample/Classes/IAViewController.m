@@ -51,6 +51,7 @@
     };
         
     IAElegantSheet *elegantSheet = [IAElegantSheet elegantSheetWithTitle:@"Elegant Sheet"];
+        
     [dict enumerateKeysAndObjectsUsingBlock:^(NSString *title, NSString *message, BOOL *stop) {
         [elegantSheet addButtonsWithTitle:title block:^{ [self alert:message]; }];
     }];

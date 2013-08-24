@@ -11,6 +11,8 @@
 @interface IAElegantSheet : UIView
 
 @property (strong, nonatomic) UIColor *baseColor;
+@property (strong, nonatomic) UIFont *font;
+@property (strong, nonatomic) UIFont *boldFont;
 
 + (instancetype)elegantSheetWithTitle:(NSString *)title;
 - (instancetype)initWithTitle:(NSString *)title;

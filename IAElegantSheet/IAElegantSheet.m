@@ -14,6 +14,7 @@ NSString *const ButtonBlockKey = @"ButtonBlock";
 NSString *const DefaultCancel = @"Cancel";
 
 int const TitleTag = 9999;
+int const OverlayTag = 10000;
 CGFloat const TransitionDuration = .2;
 CGFloat const Alpha = 0.75;
 
@@ -80,7 +81,7 @@ CGFloat const Alpha = 0.75;
 		_baseColor = [UIColor blackColor];
 		
 		UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-		titleLabel.text = [title uppercaseString];
+		titleLabel.text = title;
 		titleLabel.tag = TitleTag;
 		titleLabel.textAlignment = NSTextAlignmentCenter;
 		titleLabel.textColor = [UIColor colorWithWhite:0.9 alpha:1.0];
@@ -159,10 +160,18 @@ CGFloat const Alpha = 0.75;
     titleLabel.frame = f;
 	titleLabel.backgroundColor = self.baseColor;
     
+    if(self.boldFont) {
+        titleLabel.font = self.boldFont;
+    }
+    
 	__block CGFloat cursor = f.size.height;
     UIFont *buttonFont = [UIFont elegantFontWithSize:14.0];
+    
+    if(self.font) {
+        buttonFont = self.font;
+    }
     [self.buttonTitles enumerateObjectsUsingBlock:^(NSString *buttonTitle, NSUInteger index, BOOL *stop) {
-        CGFloat labelHeight = 32.0;
+        CGFloat labelHeight = 44.0;
         
 		UIButton *optionButton = [UIButton buttonWithType:UIButtonTypeCustom];
 		optionButton.tag = index;
@@ -174,7 +183,7 @@ CGFloat const Alpha = 0.75;
 		optionButton.titleLabel.textColor = [UIColor colorWithWhite:0.9 alpha:1.0];
 		optionButton.adjustsImageWhenHighlighted = YES;
         
-		[optionButton setTitle:[buttonTitle uppercaseString] forState:UIControlStateNormal];
+		[optionButton setTitle:buttonTitle forState:UIControlStateNormal];
 		
 		[optionButton addTarget:self action:@selector(callBlocks:) forControlEvents:UIControlEventTouchUpInside];
 		[optionButton addTarget:self action:@selector(buttonHighlight:) forControlEvents:UIControlEventTouchDown];
@@ -238,35 +247,51 @@ CGFloat const Alpha = 0.75;
 - (void)showInView:(UIView *)view {
 	[self prepare:view.frame];
 	
+    __block UIView* touchOverlay = [[UIView alloc] initWithFrame:view.frame];
+    touchOverlay.backgroundColor = [UIColor blackColor];
+    touchOverlay.alpha = 0.0;
+    touchOverlay.tag = OverlayTag;
+    [view addSubview:touchOverlay];
+
 	// place to the bottom
 	[view addSubview:self];
     
     // adding autolayout code
     UIView *elegantSheet = self;
     NSDictionary *metrics = @{ @"height": @(self.frame.size.height), @"minusHeight" : @(-self.frame.size.height) };
-    NSDictionary *views = NSDictionaryOfVariableBindings(elegantSheet);
+    NSDictionary *views = NSDictionaryOfVariableBindings(elegantSheet, touchOverlay);
     
     NSArray *verticalConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"V:[elegantSheet(height)]|" options:0 metrics:metrics views:views];
     [view addConstraints:verticalConstraints];
     NSArray *horizontalConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"|[elegantSheet]|" options:0 metrics:nil views:views];
     [view addConstraints:horizontalConstraints];
     
+//    verticalConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"V:|[touchOverlay]|" options:0 metrics:nil views:views];
+//    [view addConstraints:verticalConstraints];
+//    horizontalConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"|[touchOverlay]|" options:0 metrics:nil views:views];
+//    [view addConstraints:horizontalConstraints];
+    
 	// slide from bottom
     self.transform = CGAffineTransformMakeTranslation(0, self.bounds.size.height);
     [UIView animateWithDuration:TransitionDuration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
         self.transform = CGAffineTransformMakeTranslation(0, 0);
+        touchOverlay.alpha = 0.8;
     } completion:NULL];
 }
 
 - (void)dismiss {
 	if (!self.superview) return;
+    
+    __block UIView* touchOverlay = [self.superview viewWithTag:OverlayTag];
 	
     __block CGRect f = self.frame;
 	[UIView animateWithDuration:TransitionDuration animations:^{
         f.origin.y += f.size.height;
+        touchOverlay.alpha = 0.0f;
         self.frame = f;
 	} completion:^(BOOL finished) {
 		[self removeFromSuperview];
+        [touchOverlay removeFromSuperview];
 	}];
 }
 
